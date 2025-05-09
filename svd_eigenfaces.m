@@ -1,28 +1,32 @@
 clear; clc; close all;
 
-% Carica A e labels da fase 1 (se già salvati)
-% load('volti_dataset.mat'); % se hai usato save in fase 1
-
-% Oppure esegui la FASE 1 qui (solo per test)
+% Carichiamo A e labels da fase precedente 
+load('volti_dataset.mat'); 
 
 % Dimensioni
 [m, n] = size(A); % m = numero pixel, n = numero immagini
 
-% 1. Calcolo del volto medio
+% 1. Calcoliamo del volto medio
 mean_face = mean(A, 2);
 
-% 2. Centra i dati (sottrai volto medio a ogni colonna)
+% Salviamo il volto medio
+save('mean_face.mat', 'mean_face')
+
+% 2. Centriamo i dati (sottraiamo volto medio a ogni colonna)
 A_centered = A - mean_face;
 
-% 3. Calcola la SVD
+% 3. Calcoliamo la SVD
 [U, S, V] = svd(A_centered, 'econ'); % 'econ' per efficienza
 
-% 4. Visualizza il volto medio
+% Salviamo i risultati della SVD
+save('svd_data.mat', 'U', 'S', 'V')
+
+% 4. Visualiziamo il volto medio
 figure;
 imshow(reshape(mean_face, 112, 92), []);
 title('Volto medio');
 
-% 5. Visualizza le prime 9 eigenfaces
+% 5. Visualiziamo le prime 9 eigenfaces
 figure;
 for i = 1:9
     subplot(3,3,i);

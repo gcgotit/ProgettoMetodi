@@ -11,11 +11,11 @@ dataset_path = 'ORL_dataset';
 file_list = dir(fullfile(dataset_path, '*.jpg'));
 total_imgs = length(file_list);
 
-% Ordina per nome (es: 1_1.jpg, 2_1.jpg, ..., 410_41.jpg)
+% Ordiniamo per nome (es: 1_1.jpg, 2_1.jpg, ..., 410_41.jpg)
 [~, idx] = sort({file_list.name});
 file_list = file_list(idx);
 
-% Inizializza matrice A e labels
+% Inizializziamo matrice A e labels
 A = zeros(img_rows * img_cols, total_imgs);
 labels = zeros(1, total_imgs);
 
@@ -23,11 +23,11 @@ for i = 1:total_imgs
     filename = file_list(i).name;
     full_path = fullfile(dataset_path, filename);
 
-    % Estrai il numero del soggetto dal nome del file
+    % Estraiamo il numero del soggetto dal nome del file
     parts = split(filename, {'_', '.'});  % es: '21_3.jpg' → {'21','3','jpg'}
     subject_num = str2double(parts{2});   % seconda parte è il soggetto
 
-    % Leggi l'immagine
+    % Leggiamo l'immagine
     I = imread(full_path);
 
     % Se RGB → scala di grigi
@@ -35,15 +35,17 @@ for i = 1:total_imgs
         I = rgb2gray(I);
     end
 
-    % Ridimensiona (se serve)
+    % Ridimensioniamo 
     I = imresize(I, [img_rows, img_cols]);
 
-    % Vettorizza e memorizza
+    % Vettoriziamo e memorizza
     A(:, i) = double(I(:));
     labels(i) = subject_num;
 end
 
-% Visualizza 9 immagini per controllo
+save('volti_dataset.mat', 'A', 'labels');
+
+% Visualiziamo 9 immagini per controllo
 figure;
 for i = 1:9
     subplot(3,3,i);
