@@ -142,3 +142,7 @@ end
 %Epoca 90 - Loss: 0.2511
 %Epoca 100 - Loss: 0.3381
 %Accuratezza Rete Neurale con QR: 97.56%
+
+
+
+%trallalerotrallala
