@@ -1,64 +1,74 @@
 clear; clc; close all;
 
-% Carica dati già calcolati
-load('volti_dataset.mat');     % A, labels
-load('mean_face.mat');         % mean_face
-load('svd_data.mat');          % U, S, V
+% -------------------------
+% Caricamento dati
+% -------------------------
+load('volti_dataset.mat'); % A, labels
 
-[m, n] = size(A);
+[m, n] = size(A);  % m = numero pixel, n = numero immagini
 
-% Parametri
-k = 100;                     % numero di eigenfaces da usare
-U_k = U(:, 1:k);             % prime k eigenfaces
-
-% Centra i dati e proiettali nel sottospazio ridotto
+% -------------------------
+% Preprocessing + QR
+% -------------------------
+mean_face = mean(A, 2);
 A_centered = A - mean_face;
-projections = U_k' * A_centered; % matrice k x n
 
-% Divisione training/test
+k = 100;  % numero componenti
+[Q, ~] = qr(A_centered, 0);  % QR con riduzione
+U_k = Q(:, 1:k);             % prime k basi ortonormali
+
+% Proiezione nel sottospazio
+projections = U_k' * A_centered;  % k x n
+
+% -------------------------
+% Split Training/Test
+% -------------------------
 num_subjects = max(labels);
 imgs_per_subject = n / num_subjects;
+
 train_idx = [];
 test_idx = [];
+
 for s = 1:num_subjects
     idx = find(labels == s);
-    idx = idx(randperm(length(idx)));
+    idx = idx(randperm(length(idx))); % shuffle immagini soggetto
+
     train_idx = [train_idx, idx(1:7)];
     test_idx = [test_idx, idx(8:end)];
 end
 
-% Training e test set
 X_train = projections(:, train_idx)';
 y_train = labels(train_idx)';
+
 X_test = projections(:, test_idx)';
 y_test = labels(test_idx)';
 
-% Parametri rete neurale
-input_size = size(X_train, 2);
+% -------------------------
+% Rete Neurale Manuale
+% -------------------------
+input_size = size(X_train, 2);   % = k
 hidden_size = 128;
 num_classes = max(y_train);
 epochs = 100;
 learning_rate = 0.005;
 dropout_rate = 0.3;
 
-% Inizializza pesi
+
+% Inizializzazione pesi
 W1 = randn(hidden_size, input_size) * sqrt(2 / input_size); 
 b1 = zeros(hidden_size, 1);
 W2 = randn(num_classes, hidden_size) * sqrt(2 / hidden_size);
 b2 = zeros(num_classes, 1);
 
-% One-hot encoding
+% One-hot encoding target
 Y_train_onehot = zeros(num_classes, length(y_train));
 for i = 1:length(y_train)
     Y_train_onehot(y_train(i), i) = 1;
 end
 
-% Transponi input
-X_train_T = X_train';
+X_train_T = X_train';  % input_size x N
 
-% -------------------------
-% Addestramento
-% -------------------------
+% Training loop
 for epoch = 1:epochs
     % Forward
     Z1 = W1 * X_train_T + b1;
@@ -101,18 +111,19 @@ end
 % Test
 % -------------------------
 X_test_T = X_test';
+
 Z1_test = W1 * X_test_T + b1;
-A1_test = max(0, Z1_test);  % NO dropout nel test
+A1_test = max(0, Z1_test);
 Z2_test = W2 * A1_test + b2;
 
 expZ = exp(Z2_test - max(Z2_test, [], 1));
 A2_test = expZ ./ sum(expZ, 1);
 
 [~, y_pred] = max(A2_test, [], 1);
-y_pred = y_pred';
+y_pred = y_pred';  % vettore colonna
 
 accuracy = sum(y_pred == y_test) / length(y_test);
-fprintf('Accuratezza Rete Neurale con SVD: %.2f%%\n', accuracy * 100);
+fprintf('Accuratezza Rete Neurale con QR: %.2f%%\n', accuracy * 100);
 
 % Funzione Dropout
 function A_dropout = apply_dropout(A, rate)
@@ -120,15 +131,14 @@ function A_dropout = apply_dropout(A, rate)
     A_dropout = A .* mask;
 end
 
-% Output
-%Epoca 10 - Loss: 0.9882
-%Epoca 20 - Loss: 0.4178
-%Epoca 30 - Loss: 0.2407
-%Epoca 40 - Loss: 0.3442
-%Epoca 50 - Loss: 0.3209
-%Epoca 60 - Loss: 0.2377
-%Epoca 70 - Loss: 0.1880
-%Epoca 80 - Loss: 0.2407
-%Epoca 90 - Loss: 0.3209
-%Epoca 100 - Loss: 0.2407
-%Accuratezza Rete Neurale: 96.75%
+%Epoca 10 - Loss: 2.9525
+%Epoca 20 - Loss: 1.2814
+%Epoca 30 - Loss: 0.5964
+%Epoca 40 - Loss: 0.4359
+%Epoca 50 - Loss: 0.2014
+%Epoca 60 - Loss: 0.3304
+%Epoca 70 - Loss: 0.2407
+%Epoca 80 - Loss: 0.2000
+%Epoca 90 - Loss: 0.2511
+%Epoca 100 - Loss: 0.3381
+%Accuratezza Rete Neurale con QR: 97.56%
