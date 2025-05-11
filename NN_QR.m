@@ -8,16 +8,17 @@ load('volti_dataset.mat'); % A, labels
 [m, n] = size(A);  % m = numero pixel, n = numero immagini
 
 % -------------------------
-% Preprocessing + QR
+% Preprocessing + QR_BC
 % -------------------------
 mean_face = mean(A, 2);
 A_centered = A - mean_face;
 
-k = 100;  % numero componenti
-[Q, ~] = qr(A_centered, 0);  % QR con riduzione
-U_k = Q(:, 1:k);             % prime k basi ortonormali
+k = 100;  % numero componenti principali
 
-% Proiezione nel sottospazio
+[Q_custom, R_custom] = qr_BC(A_centered);  % nostra versione di QR
+U_k = Q_custom(:, 1:k);  % prime k basi ortonormali
+
+% Proiezione
 projections = U_k' * A_centered;  % k x n
 
 % -------------------------
@@ -125,11 +126,45 @@ y_pred = y_pred';  % vettore colonna
 accuracy = sum(y_pred == y_test) / length(y_test);
 fprintf('Accuratezza Rete Neurale con QR: %.2f%%\n', accuracy * 100);
 
+
+% -------------------------
+% Valutazione QR_BC
+% -------------------------
+% Ricostruzione dell'immagine centrata
+A_reconstructed = Q_custom * R_custom;
+reconstruction_error = norm(A_centered - A_reconstructed, 'fro');
+orthogonality_error = norm(Q_custom' * Q_custom - eye(size(Q_custom, 2)), 'fro');
+
+fprintf('Errore di ricostruzione QR_BC: %.6f\n', reconstruction_error);
+fprintf('Errore ortogonalità QR_BC: %.6f\n', orthogonality_error);
+
 % Funzione Dropout
 function A_dropout = apply_dropout(A, rate)
     mask = rand(size(A)) > rate;
     A_dropout = A .* mask;
 end
+
+function [Q, R] = qr_BC(A)
+    % QR decomposition by Modified Gram-Schmidt
+    [m, n] = size(A);
+    Q = zeros(m, n);
+    R = zeros(n, n);
+
+    for k = 1:n
+        v = A(:,k);
+        for j = 1:k-1
+            R(j,k) = Q(:,j)' * A(:,k);
+            v = v - R(j,k) * Q(:,j);
+        end
+        R(k,k) = norm(v);
+        if R(k,k) == 0
+            Q(:,k) = zeros(m,1);  % colonna nulla
+        else
+            Q(:,k) = v / R(k,k);
+        end
+    end
+end
+
 
 %Epoca 10 - Loss: 2.9525
 %Epoca 20 - Loss: 1.2814
@@ -142,7 +177,3 @@ end
 %Epoca 90 - Loss: 0.2511
 %Epoca 100 - Loss: 0.3381
 %Accuratezza Rete Neurale con QR: 97.56%
-
-
-
-%trallalerotrallala
