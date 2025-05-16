@@ -9,8 +9,8 @@ fprintf('   fatto in %.2f s\n', toc);
 
 %% 1) Parametri
 [m, n] = size(A);
-tol   = 1e-3;
-maxit = 200;
+tol   = 1e-4;
+maxit = 1000;
 
 %% 2) Calcolo volto medio
 fprintf('>>> Calcolo volto medio...\n');
