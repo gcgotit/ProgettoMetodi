@@ -1,34 +1,42 @@
 function [eigvals, V] = qr_eig(A, tol, maxit)
 % QR_EIG  Autovalori e autovettori di matrice simmetrica A
 %         tramite riduzione a tridiagonale + QR‐iteration deflazionata.
-  n = size(A,1);
-  fprintf('      [qr_eig] riduzione a tridiagonale %dx%d...\n',n,n);
-  t0 = tic;
-  [H, Qh] = houshess(A);
-  fprintf('      [qr_eig] tridiagonale in %.2f s\n', toc(t0));
-  V = Qh;
+ [H, Qh] = houshess(A);
+  n      = size(H,1);
+  V      = Qh;
   eigvals = zeros(n,1);
 
   for k = n:-1:2
     fprintf('         [qr_eig] deflazione k=%d ... ', k);
     t_k = tic;
-    iter = 0; I = eye(k);
+    iter = 0; 
+    I_k  = eye(k);
+
     while abs(H(k,k-1)) > tol*(abs(H(k,k))+abs(H(k-1,k-1)))
       iter = iter + 1;
       if iter > maxit
-        warning('qr_eig:NoConv','k=%d non conv in %d iter',k,maxit);
+        warning('qr_eig:NoConv','k=%d non conv in %d iter', k, maxit);
         break;
       end
+
+      % Wilkinson double‐shift
       d  = (H(k-1,k-1)-H(k,k))/2;
       mu = H(k,k) - sign(d)*(H(k,k-1)^2)/(abs(d)+sqrt(d^2+H(k,k-1)^2));
-      [Qk,Rk] = qr_hessenberg(H(1:k,1:k)-mu*I);
-      H(1:k,1:k) = Rk*Qk + mu*I;
-      V(:,1:k)    = V(:,1:k)*Qk;
+
+      % Applico QR ottimizzato sulla sub-matrice tridiagonale H(1:k,1:k)
+      [Qk, Rk] = qr_tridiag(H(1:k,1:k) - mu*I_k);
+
+      % Ricostruisco H e accumulo Q
+      H(1:k,1:k) = Rk*Qk + mu*I_k;
+      V(:,1:k)    = V(:,1:k) * Qk;
     end
-    eigvals(k) = H(k,k);
-    H(k,k-1)   = 0; H(k-1,k) = 0;
-    fprintf('iter=%d, time=%.2f s\n', iter, toc(t_k));
+
+    eigvals(k)   = H(k,k);
+    H(k,k-1)     = 0;
+    H(k-1,k)     = 0;
+    fprintf('iter=%d time=%.2f s\n', iter, toc(t_k));
   end
+
   eigvals(1) = H(1,1);
   fprintf('      [qr_eig] tutti autovalori estratti.\n');
 end
@@ -86,3 +94,34 @@ function [Q,R] = qr_hessenberg(A)
     end
   end
 end
+
+
+function [Q,R] = qr_tridiag(T)
+% QR_TRIDIAG fattorizzazione QR di una matrice tridiagonale T via Givens
+% Input:  T (k×k) tridiagonale, solo tre diagonali non nulle
+% Output: Q (k×k) ortogonale, R (k×k) triangolare superiore
+
+  k = size(T,1);
+  R = T;
+  Q = eye(k);
+
+  for i = 1:k-1
+    a = R(i,i);
+    b = R(i+1,i);
+    if b == 0
+      continue;
+    end
+    r = hypot(a,b);
+    c = a/r;
+    s = -b/r;
+    % costruisco le 2×2 di rotazione
+    G2 = [c  s;
+         -s  c];    % questa fa [r;0]' = G2 * [a;b]
+    % applico solo sul blocco di due righe di R
+    rows = [i, i+1];
+    R(rows, :) = G2 * R(rows, :);
+    % accumulo su Q sulle stesse due colonne
+    Q(:, rows) = Q(:, rows) * G2';  % G2' per accumulare correttamente
+  end
+end
+
