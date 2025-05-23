@@ -60,7 +60,7 @@ A2 = expZ ./ sum(expZ,1);
 acc = mean(y_pred'==y_test)*100;
 fprintf('Accuracy on test set: %.2f%%\n', acc);
 
-%% 4) (Opzionale) plot della loss
+%% 4) plot della loss
 figure; plot(1:epochs, loss_hist, 'LineWidth',1.5);
 xlabel('Epoca'); ylabel('Cross-Entropy Loss'); grid on;
 title('Andamento della Loss in Training');
