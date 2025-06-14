@@ -43,7 +43,7 @@ for i = 1:total_imgs
     labels(i) = subject_num;
 end
 
-save('volti_dataset.mat', 'A', 'labels');
+save('volti_dataset_ORL.mat', 'A', 'labels');
 
 % Visualiziamo 9 immagini per controllo
 figure;
