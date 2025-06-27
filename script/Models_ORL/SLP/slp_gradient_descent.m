@@ -7,7 +7,6 @@ function [W, b, loss_history] = slp_gradient_descent(X, Y_onehot, epochs, lr)
     [n_samples, input_size] = size(X);
     n_classes = size(Y_onehot,1);
 
-    rng(0);
     W = randn(n_classes, input_size) * sqrt(2/input_size);
     b = zeros(n_classes, 1);
 
