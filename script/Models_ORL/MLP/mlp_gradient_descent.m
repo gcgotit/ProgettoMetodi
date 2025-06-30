@@ -1,4 +1,4 @@
-function [W1,b1,W2,b2,loss_history] = ...
+function [W1,b1,W2,b2,loss_history, acc_history] = ...
     mlp_gradient_descent(X, Y_onehot, hidden_size, epochs, lr, dropout_rate)
 % MLP_GRADIENT_DESCENT  Addestra una MLP (1 hidden layer) con gradiente esplicito
 %
@@ -9,7 +9,7 @@ function [W1,b1,W2,b2,loss_history] = ...
 %   lr           learning-rate
 %   dropout_rate frazione di neuroni “spenti” (inverted dropout)
 %
-%   Ritorna: pesi, bias e loss_history
+%   Ritorna: pesi, bias, loss_history e acc_history
 
     %% --- Init ---
     [n_samples, input_size] = size(X);
@@ -22,6 +22,7 @@ function [W1,b1,W2,b2,loss_history] = ...
 
     X_T = X';                 % [I × N]
     loss_history = zeros(1,epochs);
+    acc_history  = zeros(1,epochs);  % initialize accuracy history
 
     %% --- Training loop ---
     for epoch = 1:epochs
@@ -33,7 +34,7 @@ function [W1,b1,W2,b2,loss_history] = ...
         A1_drop = A1 .* M;           % inverted dropout
 
         Z2 = W2 * A1_drop + b2;      % [C × N]
-        Z2 = Z2 - max(Z2,[],1);      % stabilité numerica
+        Z2 = Z2 - max(Z2,[],1);      % stabilita numerica
         expZ = exp(Z2);
         A2 = expZ ./ sum(expZ,1);    % soft-max -> prob.
 
@@ -45,7 +46,8 @@ function [W1,b1,W2,b2,loss_history] = ...
         % ---------- Accuracy ----------
         [~, y_pred] = max(A2,[],1);
         [~, y_true] = max(Y_onehot,[],1);
-        acc = mean(y_pred == y_true) *100;                 % TOP-1 accuracy
+        acc = mean(y_pred == y_true) * 100;
+        acc_history(epoch) = acc;    % store training accuracy
 
         if mod(epoch,10)==0 || epoch==1
             fprintf('[Epoch %3d/%3d]  Loss = %.4f   Acc = %.4f\n', ...
