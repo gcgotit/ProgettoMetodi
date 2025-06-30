@@ -1,4 +1,4 @@
-function [W_enc, b_enc, W_dec, b_dec, loss_history, test_loss_history] = ...
+function [W_enc, b_enc, W_dec, b_dec, loss_history] = ...
     autoencoder_train_2(X_train, X_test, mean_face, bottleneck_size, epochs, lr)
 % AUTOENCODER_TRAIN   Autoencoder training with per-epoch test-loss
 %
@@ -11,9 +11,7 @@ function [W_enc, b_enc, W_dec, b_dec, loss_history, test_loss_history] = ...
 %   bottleneck_size, epochs, lr: come prima
 
     [n_train, input_dim] = size(X_train);
-    n_test  = size(X_test,1);
 
-    rng(0);
     W_enc = randn(bottleneck_size, input_dim) * sqrt(2/input_dim);
     b_enc = zeros(bottleneck_size,1);
     W_dec = randn(input_dim, bottleneck_size) * sqrt(2/bottleneck_size);
@@ -63,8 +61,8 @@ function [W_enc, b_enc, W_dec, b_dec, loss_history, test_loss_history] = ...
         test_loss_history(epoch) = mean(Err_te(:).^2);
 
         if mod(epoch,10)==0
-            fprintf('[AE] Epoca %3d/%3d: Train MSE=%.5f, Test MSE=%.5f\n', ...
-                    epoch, epochs, loss_history(epoch), test_loss_history(epoch));
+            fprintf('[AE] Epoca %3d/%3d: Train MSE=%.5f \n', ...
+                    epoch, epochs, loss_history(epoch));
         end
     end
 end
