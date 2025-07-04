@@ -35,3 +35,11 @@ codegen/
 # buildtool cache folder
 .buildtool/
 
+resources/
+results_orl_ae/
+results_orl_ae_svd/
+results_yale/
+results_yale_cnn_svd/
+results_yale_svd_fulltrain/
+Old_file/
+
